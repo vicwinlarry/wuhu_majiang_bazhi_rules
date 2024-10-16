@@ -1,7 +1,4 @@
-# app.py
-
 import streamlit as st
-from PIL import Image
 from rules import rules_315, rules_525, mouth_rules, calculate_total_fan, validate_mouth_selection, validate_gang_count
 
 def main():
@@ -45,6 +42,8 @@ def main():
         if not valid:
             st.session_state.selected_mouths = list(selected)
             st.warning("对对胡、通天和四核不能同时选择。")
+        else:
+            st.session_state.selected_mouths = list(st.session_state.mouth_selector)
 
     selected_mouths = st.multiselect(
         "选择嘴子:",
