@@ -1,7 +1,5 @@
 # rules.py
 
-# rules.py
-
 # 315计分规则字典
 rules_315 = {
     "8支": {"平": [3, 4], "自摸": [6, 9]},
@@ -146,103 +144,6 @@ mouth_rules = {
     },
 }
 
-
-
-# 获取支番的得分范围
-def get_fan_score(hand_rule, scoring_system):
-    if scoring_system == "315":
-        rule = rules_315.get(hand_rule)
-    elif scoring_system == "525":
-        rule = rules_525.get(hand_rule)
-    else:
-        raise ValueError("无效的计分系统。请选择 '315' 或 '525'。")
-    
-    if rule:
-        return rule["平"], rule["自摸"]
-    else:
-        return [0, 0], [0, 0]
-
-# 计算嘴子的总番数
-def calculate_mouth_fan(mouth_types, scoring_system, self_draw=False):
-    total_fan = 0
-    for mouth in mouth_types:
-        if mouth in mouth_rules:
-            rule = mouth_rules[mouth][scoring_system]
-            fan = rule["番"]
-            if self_draw:
-                fan *= rule["自摸倍数"]
-            total_fan += fan
-    return total_fan
-
-# 计算杠牌的总番数
-def calculate_gang_fan(ming_gang, an_gang, scoring_system):
-    if scoring_system == "315":
-        fan = ming_gang * 1 + an_gang * 2
-    elif scoring_system == "525":
-        fan = ming_gang * 2 + an_gang * 4
-    else:
-        fan = 0
-    return fan
-
-# 综合计算函数
-def calculate_total_fan(hand, scoring_system, self_draw=False, mouths=None, ming_gang=0, an_gang=0):
-    total_fan_non_dealer = 0
-    total_fan_dealer = 0
-    
-    hand_rule = hand.get("支数压")
-    if not hand_rule:
-        raise ValueError("手牌字典中缺少 '支数压' 键。")
-    
-    ping_fan_range, self_fan_range = get_fan_score(hand_rule, scoring_system)
-    
-    if self_draw:
-        base_fan_min, base_fan_max = self_fan_range
-    else:
-        base_fan_min, base_fan_max = ping_fan_range
-    
-    total_fan_non_dealer += base_fan_min
-    total_fan_dealer += base_fan_max
-
-    if mouths:        
-        mouth_fan = calculate_mouth_fan(mouths, scoring_system, self_draw)
-        total_fan_non_dealer += mouth_fan
-        total_fan_dealer += mouth_fan
-
-    if ming_gang > 0 or an_gang > 0:
-        gang_fan = calculate_gang_fan(ming_gang, an_gang, scoring_system)
-        total_fan_non_dealer += gang_fan
-        total_fan_dealer += gang_fan
-
-    return total_fan_non_dealer, total_fan_dealer
-
-
-
-# 新增的规则方法
-def validate_mouth_selection(selected_mouths):
-    """
-    验证嘴子的选择，确保对对胡、通天和四核不能同时选择。
-
-    :param selected_mouths: 已选择的嘴子列表
-    :return: 验证通过返回 True，否则返回 False，并调整选择
-    """
-    if "对对胡" in selected_mouths and "通天" in selected_mouths:
-        return False, selected_mouths - {"通天"}
-    if "对对胡" in selected_mouths and "四核" in selected_mouths:
-        return False, selected_mouths - {"四核"}
-    return True, selected_mouths
-
-def validate_gang_count(ming_gang, an_gang):
-    """
-    验证明杠和暗杠的总数，确保不超过4个。
-
-    :param ming_gang: 明杠的数量
-    :param an_gang: 暗杠的数量
-    :return: 验证通过返回 True，否则返回 False
-    """
-    return (ming_gang + an_gang) <= 4
-
-
-
 # 获取支番的得分范围
 def get_fan_score(hand_rule, scoring_system):
     """
@@ -285,13 +186,14 @@ def calculate_mouth_fan(mouth_types, scoring_system, self_draw=False):
     return total_fan
 
 # 计算杠牌的总番数
-def calculate_gang_fan(ming_gang, an_gang, scoring_system):
+def calculate_gang_fan(ming_gang, an_gang, scoring_system, self_draw=False):
     """
     计算杠牌的总番数。
     
     :param ming_gang: 明杠的数量
     :param an_gang: 暗杠的数量
     :param scoring_system: 计分系统，"315" 或 "525"
+    :param self_draw: 是否自摸，用于决定是否翻倍杠的番数
     :return: 杠牌的总番数
     """
     if scoring_system == "315":
@@ -300,6 +202,10 @@ def calculate_gang_fan(ming_gang, an_gang, scoring_system):
         fan = ming_gang * 2 + an_gang * 4
     else:
         fan = 0
+    
+    if self_draw and (ming_gang > 0 or an_gang > 0):
+        fan *= 2  # 杠的分数翻倍
+    
     return fan
 
 # 综合计算函数
@@ -343,9 +249,32 @@ def calculate_total_fan(hand, scoring_system, self_draw=False, mouths=None,
 
     # 叠加杠牌的番数
     if ming_gang > 0 or an_gang > 0:
-        gang_fan = calculate_gang_fan(ming_gang, an_gang, scoring_system)
+        gang_fan = calculate_gang_fan(ming_gang, an_gang, scoring_system, self_draw)
         total_fan_non_dealer += gang_fan
         total_fan_dealer += gang_fan
 
     return total_fan_non_dealer, total_fan_dealer
 
+# 新增的规则方法
+def validate_mouth_selection(selected_mouths):
+    """
+    验证嘴子的选择，确保对对胡、通天和四核不能同时选择。
+
+    :param selected_mouths: 已选择的嘴子列表
+    :return: 验证通过返回 True，否则返回 False，并调整选择
+    """
+    if "对对胡" in selected_mouths and "通天" in selected_mouths:
+        return False, selected_mouths - {"通天"}
+    if "对对胡" in selected_mouths and "四核" in selected_mouths:
+        return False, selected_mouths - {"四核"}
+    return True, selected_mouths
+
+def validate_gang_count(ming_gang, an_gang):
+    """
+    验证明杠和暗杠的总数，确保不超过4个。
+
+    :param ming_gang: 明杠的数量
+    :param an_gang: 暗杠的数量
+    :return: 验证通过返回 True，否则返回 False
+    """
+    return (ming_gang + an_gang) <= 4

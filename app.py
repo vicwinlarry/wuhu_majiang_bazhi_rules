@@ -1,10 +1,13 @@
+
+# app.py
+
 import streamlit as st
 from rules import rules_315, rules_525, mouth_rules, calculate_total_fan, validate_mouth_selection, validate_gang_count
 
 def main():
     st.set_page_config(
         page_title="芜湖麻将计分系统",
-        page_icon="🀄",
+        page_icon="��",
         layout="centered",
         initial_sidebar_state="auto",
     )
