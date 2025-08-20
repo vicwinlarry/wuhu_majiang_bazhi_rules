@@ -8,6 +8,21 @@ st.set_page_config(
     layout="centered",
 )
 
+# 隐藏右上角的设置、fork等图标
+hide_streamlit_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    .stDeployButton {display:none;}
+    div[data-testid="stToolbar"] {display:none;}
+    div[data-testid="stDecoration"] {display:none;}
+    div[data-testid="stStatusWidget"] {display:none;}
+    #root > div:nth-child(1) > div > div > div > div > section > div {padding-top: 0rem;}
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 def score_management_app():
     st.title("积分管理系统")
 
